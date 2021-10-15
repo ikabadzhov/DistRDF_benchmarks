@@ -1,5 +1,4 @@
 import ROOT
-
 from dask_jobqueue import SLURMCluster
 from distributed import Client
 from dask import delayed
@@ -13,16 +12,21 @@ import asyncssh
 hosts = ['localhost']
 nthreads = X
 nprocs = 1
-cluster = SSHCluster(['localhost', 'localhost'], connect_options={"client_keys": "/hpcscratch/user/ikabadzh/.ssh/ik_node"}, worker_options={"nthreads": nthreads, }, )
-#cluster.scale(X)
-client = Client(cluster)
+#cluster = SSHCluster(['localhost', 'localhost'], connect_options={"client_keys": "/hpcscratch/user/ikabadzh/.ssh/ik_node"}, worker_options={"nthreads": nthreads, })
 
 
 ROOT.gROOT.SetBatch(True)
 
 RDataFrame = ROOT.RDF.Experimental.Distributed.Dask.RDataFrame
 
-# logger = ROOT.RDF.Experimental.Distributed.create_logger(level="DEBUG")
+
+cluster = SSHCluster(["localhost","localhost"], connect_options={"known_hosts": None, "client_keys": "/hpcscratch/user/ikabadzh/.ssh/ik_node"})
+# this ssh cluster definition can start the computation, but reaches
+# raise exception.with_traceback(traceback)
+# distributed.scheduler.KilledWorker: ('dask_mapper-d5cc959e-62ae-43b5-9f1f-26de2ae2ac23', <WorkerState 'tcp://128.142.160.72:36482', name: 0, memory: 0, processing: 1>)
+
+
+client = Client(cluster)
 
 
 def dimuonSpectrum(df):
@@ -59,6 +63,9 @@ def dimuonSpectrum(df):
     c.SetLogy()
     watch = ROOT.TStopwatch()
     # Draw histogram
+    #import DistRDF
+    #hist.GetValue()
+    #import pdb; pdb.set_trace()
     hist.GetXaxis().SetTitle("m_{#mu#mu} (GeV)")
     hist.GetXaxis().SetTitleSize(0.04)
     hist.GetYaxis().SetTitle("N_{Events}")
@@ -97,4 +104,4 @@ if __name__ == '__main__':
     df = RDataFrame("Events", filelist, npartitions=X, daskclient=client)
 
     dimuonSpectrum(df)
-    client.shutdown()
+    #client.shutdown()

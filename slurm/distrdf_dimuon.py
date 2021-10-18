@@ -2,14 +2,18 @@ from dask_jobqueue import SLURMCluster
 from distributed import Client
 from dask import delayed
 
+import logging
+#logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 from sys import argv
 X = int(argv[1])
 
 cluster = SLURMCluster(memory='8g',
-                       processes=1,
-                       cores=1,
-                       queue='batch-long')
+                       processes=2,
+                       cores=2,
+                       queue='batch-long',
+                       header_skip=['-n 1', '-N 1'],
+                       job_extra = ['-n 2', '-N 2'])
 
 cluster.scale(X)
 client = Client(cluster)
@@ -20,7 +24,6 @@ ROOT.gROOT.SetBatch(True)
 
 RDataFrame = ROOT.RDF.Experimental.Distributed.Dask.RDataFrame
 
-# logger = ROOT.RDF.Experimental.Distributed.create_logger(level="DEBUG")
 
 
 def dimuonSpectrum(df):
@@ -55,6 +58,8 @@ def dimuonSpectrum(df):
     c = ROOT.TCanvas("c", "", 800, 700)
     c.SetLogx()
     c.SetLogy()
+    #watch = ROOT.TStopwatch()
+    hist.GetValue() # triggers the event loop
 
     # Draw histogram
     hist.GetXaxis().SetTitle("m_{#mu#mu} (GeV)")

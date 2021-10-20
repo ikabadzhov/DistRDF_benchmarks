@@ -15,7 +15,7 @@ parser.add_argument("-c", "--cores", type=int, default=4)
 #parser.add_argument("-p", "--processes", type=int, default=4)
 parser.add_argument("-n", "--ntasks", type=int, default=1)
 parser.add_argument("-N", "--Nodes", type=int, default=1)
-parser.add_argument("-s", "--scale", type=int, default=1)
+#parser.add_argument("-s", "--scale", type=int, default=1)
 args = parser.parse_args()
 
 
@@ -29,7 +29,6 @@ args = parser.parse_args()
 # processes=P -> --nprocs P
 #             -> --nthreads T  is automatically adjusted such that P*T(<)=C
 #             -> if P>C: --nthreads 0
-#             -> no need to be specified
 #
 # '-n N' -> NumTasks=N
 #        -> NumCPUs=N*C
@@ -38,13 +37,13 @@ args = parser.parse_args()
 
 
 cluster = SLURMCluster(memory='{}g'.format(args.cores*4),
-                       #processes=args.processes,
+                       processes=args.cores,
                        cores=args.cores,
                        queue='batch-short',
                        header_skip=['-n 1', '-N 1'],
                        job_extra=['-n {}'.format(args.ntasks), '-N {}'.format(args.Nodes), '-o %j.output', '-e %j.error'])
 
-cluster.scale(args.scale)
+cluster.scale(args.cores*args.Nodes)
 client = Client(cluster)
 
 
@@ -126,7 +125,7 @@ if __name__ == '__main__':
     dataset = ("root://eospublic.cern.ch//eos/opendata/cms/derived-data/"
                "AOD2NanoAODOutreachTool/Run2012BC_DoubleMuParked_Muons.root")
     filelist = ["Run2012BC_DoubleMuParked_Muons.root"]
-    df = RDataFrame("Events", filelist, npartitions=(args.cores*args.ntasks*args.scale), daskclient=client)
+    df = RDataFrame("Events", filelist, npartitions=(args.ntasks*args.cores*args.Nodes), daskclient=client)
 
     dimuonSpectrum(df)
 

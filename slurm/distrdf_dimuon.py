@@ -3,19 +3,48 @@ from distributed import Client
 from dask import delayed
 
 import logging
-#logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
-from sys import argv
-X = int(argv[1])
+#from sys import argv
+#X = int(argv[1])
+#Y = int(argv[2])
 
-cluster = SLURMCluster(memory='8g',
-                       processes=2,
-                       cores=2,
-                       queue='batch-long',
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("-c", "--cores", type=int, default=4)
+#parser.add_argument("-p", "--processes", type=int, default=4)
+parser.add_argument("-n", "--ntasks", type=int, default=1)
+parser.add_argument("-N", "--Nodes", type=int, default=1)
+parser.add_argument("-s", "--scale", type=int, default=1)
+args = parser.parse_args()
+
+
+
+
+# cores=C -> #SBATCH --cpus-per-task=C
+#         -> CPUs/Task=C
+#         -> if cores only are specified:
+#            general rule C=a*b, where a>=b, then: --nthreads b --nprocs a
+#
+# processes=P -> --nprocs P
+#             -> --nthreads T  is automatically adjusted such that P*T(<)=C
+#             -> if P>C: --nthreads 0
+#             -> no need to be specified
+#
+# '-n N' -> NumTasks=N
+#        -> NumCPUs=N*C
+#
+# scale(S) -> # of workers is S, in particular # of jobs = S//P
+
+
+cluster = SLURMCluster(memory='{}g'.format(args.cores*4),
+                       #processes=args.processes,
+                       cores=args.cores,
+                       queue='batch-short',
                        header_skip=['-n 1', '-N 1'],
-                       job_extra = ['-n 2', '-N 2'])
+                       job_extra=['-n {}'.format(args.ntasks), '-N {}'.format(args.Nodes), '-o %j.output', '-e %j.error'])
 
-cluster.scale(X)
+cluster.scale(args.scale)
 client = Client(cluster)
 
 
@@ -97,7 +126,7 @@ if __name__ == '__main__':
     dataset = ("root://eospublic.cern.ch//eos/opendata/cms/derived-data/"
                "AOD2NanoAODOutreachTool/Run2012BC_DoubleMuParked_Muons.root")
     filelist = ["Run2012BC_DoubleMuParked_Muons.root"]
-    df = RDataFrame("Events", filelist, npartitions=X, daskclient=client)
+    df = RDataFrame("Events", filelist, npartitions=(args.cores*args.ntasks*args.scale), daskclient=client)
 
     dimuonSpectrum(df)
 

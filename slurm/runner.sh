@@ -1,10 +1,10 @@
 #!/bin/sh
 
-for Nodes in 1 2 4:
+for Nodes in 1 2 4
 do
-    for ntasks in 1 2 4 8:
+    for ntasks in 1 2 4 8
     do
-        for cores in 1 2 4 8:
+        for cores in 1 2 4 8
         do
             CMD="python3 distrdf.py -c $cores -n $ntasks -N $Nodes"
             printf "\n\n${CMD}\n" >> ~/distrdf_timestamps.out

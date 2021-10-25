@@ -5,45 +5,20 @@ from dask import delayed
 import logging
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
-#from sys import argv
-#X = int(argv[1])
-#Y = int(argv[2])
-
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--cores", type=int, default=4)
-#parser.add_argument("-p", "--processes", type=int, default=4)
-parser.add_argument("-n", "--ntasks", type=int, default=1)
 parser.add_argument("-N", "--Nodes", type=int, default=1)
-#parser.add_argument("-s", "--scale", type=int, default=1)
 args = parser.parse_args()
 
-
-
-
-# cores=C -> #SBATCH --cpus-per-task=C
-#         -> CPUs/Task=C
-#         -> if cores only are specified:
-#            general rule C=a*b, where a>=b, then: --nthreads b --nprocs a
-#
-# processes=P -> --nprocs P
-#             -> --nthreads T  is automatically adjusted such that P*T(<)=C
-#             -> if P>C: --nthreads 0
-#
-# '-n N' -> NumTasks=N
-#        -> NumCPUs=N*C
-#
-# scale(S) -> # of workers is S, in particular # of jobs = S//P
-
-
-cluster = SLURMCluster(memory='{}g'.format(args.cores*4),
+cluster = SLURMCluster(memory='{}g'.format(4*args.cores),
                        processes=args.cores,
                        cores=args.cores,
-                       queue='batch-short',
+                       queue='photon',
                        header_skip=['-n 1', '-N 1'],
-                       job_extra=['-n {}'.format(args.ntasks), '-N {}'.format(args.Nodes)])#, '-o %j.output', '-e %j.error'])
+                       job_extra=['--ntasks-per-node 1', '-N {}'.format(args.Nodes)])
 
-cluster.scale(args.cores*args.Nodes)
+cluster.scale(jobs=1)
 client = Client(cluster)
 
 
@@ -55,9 +30,6 @@ RDataFrame = ROOT.RDF.Experimental.Distributed.Dask.RDataFrame
 
 
 def dimuonSpectrum(df):
-    watch = ROOT.TStopwatch()
-    #entries_total = df.Count()
-
     # Select events with exactly two muons
     df_2mu = df.Filter("nMuon == 2", "Events with exactly two muons")
 
@@ -78,15 +50,13 @@ def dimuonSpectrum(df):
     hist = df_mass.Histo1D(ROOT.RDF.TH1DModel(
         "", "", bins, low, up), "Dimuon_mass")
 
-    #entries_final = df_mass.Count()
-
     # Create canvas for plotting
     ROOT.gStyle.SetOptStat(0)
     ROOT.gStyle.SetTextFont(42)
     c = ROOT.TCanvas("c", "", 800, 700)
     c.SetLogx()
     c.SetLogy()
-    #watch = ROOT.TStopwatch()
+ 
     hist.GetValue() # triggers the event loop
 
     # Draw histogram
@@ -114,18 +84,13 @@ def dimuonSpectrum(df):
     label.SetTextAlign(31)
     label.DrawLatex(0.90, 0.92, "#sqrt{s} = 8 TeV, L_{int} = 11.6 fb^{-1}")
 
-    #print("Initial total entries: {}".format(entries_total.GetValue()))
-    #print("Entries after processing: {}".format(entries_final.GetValue()))
     # Save Canvas to image
     elapsed = watch.RealTime()
-    print("\tEvent loop dimuon_data:", elapsed, "s")
     c.SaveAs("dimuonSpectrum.png")
 
 if __name__ == '__main__':
-    dataset = ("root://eospublic.cern.ch//eos/opendata/cms/derived-data/"
-               "AOD2NanoAODOutreachTool/Run2012BC_DoubleMuParked_Muons.root")
-    filelist = ["Run2012BC_DoubleMuParked_Muons.root"]
-    df = RDataFrame("Events", filelist, npartitions=(args.ntasks*args.cores*args.Nodes), daskclient=client)
+    filelist =["f1.root", "f2.root", "f3.root", "f4.root"]
+    df = RDataFrame("Events", filelist, npartitions=(4*args.cores*args.Nodes), daskclient=client)
 
     dimuonSpectrum(df)
 

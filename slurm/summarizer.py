@@ -11,10 +11,8 @@ chunks = []
 i = 0
 chu = []
 
-with open('many_jobs.out.2') as f:
+with open('out_file.out') as f:  # after running the .sh script
 	for line in f:
-		#if line.startswith("python3"):
-		# print(line)
 		if line.startswith("python3"):
 			chunks.append(chu)
 			i +=1

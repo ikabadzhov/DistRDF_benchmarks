@@ -11,14 +11,19 @@ parser.add_argument("-c", "--cores", type=int, default=4)
 parser.add_argument("-N", "--Nodes", type=int, default=1)
 args = parser.parse_args()
 
+#import pdb; pdb.set_trace()
+
 cluster = SLURMCluster(memory='{}g'.format(4*args.cores),
                        processes=args.cores,
                        cores=args.cores,
                        queue='photon',
-                       header_skip=['-n 1', '-N 1'],
-                       job_extra=['--ntasks-per-node 1', '-N {}'.format(args.Nodes)])
+                       #python = 'srun /hpcscratch/user/ikabadzh/mambaforge/envs/myenv/bin/python3',
+                       header_skip=['-N 1', '-n 1'],
+                       job_extra=['--ntasks-per-node=1', '-N {}'.format(args.Nodes)])
 
-cluster.scale(jobs=1)
+#import pdb; pdb.set_trace()
+cluster.scale(jobs=args.Nodes)
+print(cluster.get_logs())
 client = Client(cluster)
 
 
@@ -85,11 +90,10 @@ def dimuonSpectrum(df):
     label.DrawLatex(0.90, 0.92, "#sqrt{s} = 8 TeV, L_{int} = 11.6 fb^{-1}")
 
     # Save Canvas to image
-    elapsed = watch.RealTime()
     c.SaveAs("dimuonSpectrum.png")
 
 if __name__ == '__main__':
-    filelist =["f1.root", "f2.root", "f3.root", "f4.root"]
+    filelist = ["f{}.root".format(i) for i in range(1,101)]
     df = RDataFrame("Events", filelist, npartitions=(4*args.cores*args.Nodes), daskclient=client)
 
     dimuonSpectrum(df)

@@ -2,8 +2,8 @@ from dask_jobqueue import SLURMCluster
 from distributed import Client
 from dask import delayed
 
-import logging
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+#import logging
+#logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -17,13 +17,13 @@ cluster = SLURMCluster(memory='{}g'.format(4*args.cores),
                        processes=args.cores,
                        cores=args.cores,
                        queue='photon',
-                       #python = 'srun /hpcscratch/user/ikabadzh/mambaforge/envs/myenv/bin/python3',
-                       header_skip=['-N 1', '-n 1'],
-                       job_extra=['--ntasks-per-node=1', '-N {}'.format(args.Nodes)])
+                       local_directory='/tmp/ikabadzh',
+                       header_skip=['-n 1'],
+                       job_extra=['--ntasks-per-node=1'])
 
 #import pdb; pdb.set_trace()
 cluster.scale(jobs=args.Nodes)
-print(cluster.get_logs())
+#print(cluster.get_logs())
 client = Client(cluster)
 
 
@@ -61,8 +61,14 @@ def dimuonSpectrum(df):
     c = ROOT.TCanvas("c", "", 800, 700)
     c.SetLogx()
     c.SetLogy()
- 
+
+    client.wait_for_workers(args.Nodes)
+    watch = ROOT.TStopwatch()
     hist.GetValue() # triggers the event loop
+    elapsed = watch.RealTime()
+    file_out = open('distrdf_timestamps.out', 'a')
+    file_out.write("cores={} Nodes={}: Event Loop={}s".format(args.cores, args.Nodes, elapsed))
+    file_out.close()
 
     # Draw histogram
     hist.GetXaxis().SetTitle("m_{#mu#mu} (GeV)")

@@ -23,11 +23,13 @@ with open('distrdf_timestamps.out') as f:  # after running the .sh script
 #print(chunks[2][0])
 
 for i in range(1, len(chunks), 1):
-	print(chunks[i][0][:-1])
-	print(chunks[i][4])
-	begin_t = datetime.strptime(chunks[i][2][33:-1], "%y-%m-%d %H:%M:%S.%f")
+	#print(chunks[i][0][:-1])
+	begin_t = datetime.strptime(chunks[i][1][33:-1], "%y-%m-%d %H:%M:%S.%f")
 	
-	end_t = datetime.strptime(chunks[i][-5][31:-1], "%y-%m-%d %H:%M:%S.%f")
-	print(end_t - begin_t)
-	#print(chunks[i][-4])
+	end_t = datetime.strptime(chunks[i][-6][31:-1], "%y-%m-%d %H:%M:%S.%f")
+	print(chunks[i][-3][:-1])
+	print("Timer from Base.py", end_t - begin_t)
+	
+	#if "=" in str(chunks[i]):
+	#	print(i, chunks[i])
 	print()

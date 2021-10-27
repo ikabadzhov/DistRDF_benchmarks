@@ -66,8 +66,8 @@ def dimuonSpectrum(df):
     watch = ROOT.TStopwatch()
     hist.GetValue() # triggers the event loop
     elapsed = watch.RealTime()
-    file_out = open('distrdf_timestamps.out', 'a')
-    file_out.write("cores={} Nodes={}: Event Loop={}s".format(args.cores, args.Nodes, elapsed))
+    file_out = open('../../distrdf_timestamps.out', 'a')
+    file_out.write("\ncores={} Nodes={}: Event Loop={}s\n".format(args.cores, args.Nodes, elapsed))
     file_out.close()
 
     # Draw histogram

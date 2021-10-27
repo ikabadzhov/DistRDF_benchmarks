@@ -11,7 +11,7 @@ chunks = []
 i = 0
 chu = []
 
-with open('out_file.out') as f:  # after running the .sh script
+with open('distrdf_timestamps.out') as f:  # after running the .sh script
 	for line in f:
 		if line.startswith("python3"):
 			chunks.append(chu)
